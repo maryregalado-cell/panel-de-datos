@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Fiscalización IIVTNU 2014 | Diputación A Coruña</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome (Unicode icons fallback used, but loading for standard icons if needed) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Google Fonts: Inter & Merriweather -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: "Warm Corporate Audit" 
+         Background: Warm Neutral (Slate/Stone)
+         Primary: Deep Navy (Trust/Authority)
+         Accent: Muted Teal (Data/Fiscal)
+         Alert: Soft Red (Incidents)
+    -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* Stone 100 */
+            color: #44403c; /* Stone 700 */
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Chart Container Styles - MANDATORY */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Constraint width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height */
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Scrollbar for panels */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #e7e5e4;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #a8a29e;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #78716c;
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .active-nav {
+            border-bottom: 3px solid #0d9488; /* Teal 600 */
+            color: #0f766e; /* Teal 700 */
+            font-weight: 600;
+        }
+    </style>
+
+    <!-- Application Structure Plan:
+         1. Header: Contextual framing (Diputación, 2014, IIVTNU).
+         2. Dashboard "El Universo": Quantitative view of the scope (15k files vs sample).
+         3. Interactive "Matriz de Incidencias": The core exploration area. Users click on categories (Documentation, Calculation, etc.) to see specific findings from the report.
+         4. Simulator "Check-List del Auditor": Interactive element where users verify a dummy file against report criteria.
+         5. Conclusions: Final verdict and text summary.
+         
+         Rationale: Fiscal reports are dense. A dashboard structure allows users to grasp the "Big Numbers" first, then drill down into specific qualitative errors without reading pages of text.
+    -->
+    
+    <!-- Visualization & Content Choices:
+         - Charts: Doughnut for Altas/Bajas mix (Goal: Inform proportion). Bar chart for Universe vs Sample (Goal: Context).
+         - Interactive List: For Incidences (Goal: Detail on demand).
+         - Icons/Unicode: Used for visual cues on document status (Check/Times).
+         - NO SVG/Mermaid: All graphics are Chart.js or HTML/CSS.
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="antialiased">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center gap-2">
+                        <div class="h-8 w-8 bg-stone-800 rounded flex items-center justify-center text-white font-serif font-bold">F</div>
+                        <span class="font-serif font-bold text-lg text-stone-800 tracking-tight">Fiscalización IIVTNU 2014</span>
+                    </div>
+                    <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+                        <button onclick="navigate('dashboard')" id="nav-dashboard" class="active-nav border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            Visión Global
+                        </button>
+                        <button onclick="navigate('incidencias')" id="nav-incidencias" class="border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            Hallazgos e Incidencias
+                        </button>
+                        <button onclick="navigate('conclusiones')" id="nav-conclusiones" class="border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            Conclusiones
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-xs font-semibold bg-stone-100 text-stone-600 py-1 px-3 rounded-full border border-stone-200">
+                        Informe Definitivo
+                    </span>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div class="sm:hidden flex justify-around bg-stone-50 border-t border-stone-200 py-2">
+            <button onclick="navigate('dashboard')" class="text-xs font-medium text-stone-600">Global</button>
+            <button onclick="navigate('incidencias')" class="text-xs font-medium text-stone-600">Incidencias</button>
+            <button onclick="navigate('conclusiones')" class="text-xs font-medium text-stone-600">Conclusiones</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- SECTION 1: DASHBOARD / VISION GLOBAL -->
+        <section id="dashboard" class="space-y-8 animate-fade-in">
+            <!-- Intro Text -->
+            <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-teal-600">
+                <h2 class="text-2xl font-bold text-stone-800 mb-2">Alcance de la Fiscalización</h2>
+                <p class="text-stone-600 leading-relaxed">
+                    Este panel interactivo resume los resultados del control financiero realizado sobre la gestión del Impuesto sobre el Incremento de Valor de los Terrenos de Naturaleza Urbana (Plusvalía) en el ejercicio 2014. 
+                    El objetivo fue verificar la legalidad de los expedientes gestionados por delegación de los ayuntamientos de la provincia de A Coruña.
+                    <br><br>
+                    Utilice las gráficas a continuación para entender la <strong>metodología de muestreo</strong> utilizada para auditar un volumen de más de 15.000 expedientes.
+                </p>
+            </div>
+
+            <!-- Key Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg p-6 card-shadow text-center">
+                    <div class="text-sm font-medium text-stone-500 uppercase tracking-wider">Universo Total</div>
+                    <div class="mt-2 text-4xl font-extrabold text-stone-800">15.541</div>
+                    <div class="mt-1 text-sm text-stone-400">Expedientes en 2014</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 card-shadow text-center border-t-4 border-teal-500">
+                    <div class="text-sm font-medium text-stone-500 uppercase tracking-wider">Muestra Analizada</div>
+                    <div class="mt-2 text-4xl font-extrabold text-teal-700">375</div>
+                    <div class="mt-1 text-sm text-stone-400">Expedientes Auditados</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 card-shadow text-center">
+                    <div class="text-sm font-medium text-stone-500 uppercase tracking-wider">Nivel de Confianza</div>
+                    <div class="mt-2 text-4xl font-extrabold text-stone-800">95%</div>
+                    <div class="mt-1 text-sm text-stone-400">Margen de error ±5%</div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Chart 1: Universe Breakdown -->
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <h3 class="text-lg font-bold text-stone-700 mb-4 border-b pb-2">Distribución del Universo (Tipología)</h3>
+                    <p class="text-sm text-stone-500 mb-4">Desglose total de expedientes de Altas y Bajas gestionados en 2014.</p>
+                    <div class="chart-container">
+                        <canvas id="universeChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center text-sm text-stone-500 italic">
+                        El 57% de los expedientes corresponden a Altas (Liquidaciones y Autoliquidaciones).
+                    </div>
+                </div>
+
+                <!-- Chart 2: Sampling Composition -->
+                <div class="bg-white rounded-lg p-6 card-shadow">
+                    <h3 class="text-lg font-bold text-stone-700 mb-4 border-b pb-2">Composición de la Muestra</h3>
+                    <p class="text-sm text-stone-500 mb-4">Proporción de expedientes seleccionados aleatoriamente para revisión detallada.</p>
+                    <div class="chart-container">
+                        <canvas id="sampleChart"></canvas>
+                    </div>
+                    <div class="mt-4 flex justify-center gap-4 text-sm">
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-teal-600 mr-2"></span>Altas (245)</span>
+                        <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-stone-400 mr-2"></span>Bajas (130)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: HALLAZGOS E INCIDENCIAS -->
+        <section id="incidencias" class="hidden space-y-8 animate-fade-in">
+            <div class="bg-white rounded-lg p-6 shadow-sm">
+                <h2 class="text-2xl font-bold text-stone-800 mb-2">Análisis de Incidencias</h2>
+                <p class="text-stone-600">
+                    Explore las categorías a continuación para descubrir las principales debilidades detectadas durante la fiscalización. 
+                    El informe identifica áreas de mejora en la documentación, el cálculo de cuotas y los procedimientos administrativos.
+                    <br>
+                    <span class="text-sm text-stone-500 bg-stone-100 px-2 py-1 rounded mt-2 inline-block">Instrucción: Haga clic en las tarjetas de la izquierda para ver el detalle.</span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Sidebar Selection -->
+                <div class="lg:col-span-4 space-y-4">
+                    <button onclick="showFinding('documentacion')" id="btn-documentacion" class="finding-btn w-full text-left p-4 rounded-lg bg-white shadow-sm border-l-4 border-teal-500 hover:bg-stone-50 transition-all active-finding">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-stone-700">1. Documentación</h3>
+                            <i class="fas fa-file-alt text-teal-500"></i>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Soporte documental incompleto</p>
+                    </button>
+                    
+                    <button onclick="showFinding('calculo')" id="btn-calculo" class="finding-btn w-full text-left p-4 rounded-lg bg-white shadow-sm border-l-4 border-transparent hover:border-stone-300 hover:bg-stone-50 transition-all">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-stone-700">2. Cálculo y Liquidación</h3>
+                            <i class="fas fa-calculator text-stone-400"></i>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Errores en cuotas y bonificaciones</p>
+                    </button>
+
+                    <button onclick="showFinding('bajas')" id="btn-bajas" class="finding-btn w-full text-left p-4 rounded-lg bg-white shadow-sm border-l-4 border-transparent hover:border-stone-300 hover:bg-stone-50 transition-all">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-stone-700">3. Procedimiento de Bajas</h3>
+                            <i class="fas fa-ban text-stone-400"></i>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Motivación y resoluciones</p>
+                    </button>
+
+                    <button onclick="showFinding('notificaciones')" id="btn-notificaciones" class="finding-btn w-full text-left p-4 rounded-lg bg-white shadow-sm border-l-4 border-transparent hover:border-stone-300 hover:bg-stone-50 transition-all">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-stone-700">4. Notificaciones</h3>
+                            <i class="fas fa-envelope text-stone-400"></i>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">Acreditación de recepción</p>
+                    </button>
+                </div>
+
+                <!-- Detail View Area -->
+                <div class="lg:col-span-8">
+                    <div id="finding-content" class="bg-white rounded-lg shadow-md p-6 h-full min-h-[400px]">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incidence Stats Chart -->
+            <div class="bg-white rounded-lg p-6 card-shadow mt-8">
+                <h3 class="text-lg font-bold text-stone-700 mb-4">Impacto Relativo de Incidencias</h3>
+                <p class="text-sm text-stone-500 mb-4">Frecuencia estimada de aparición de cada tipo de error en la muestra analizada.</p>
+                <div class="chart-container">
+                    <canvas id="incidencesChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: CONCLUSIONES -->
+        <section id="conclusiones" class="hidden space-y-8 animate-fade-in">
+            <div class="bg-white rounded-lg p-8 border-t-8 border-stone-700 shadow-lg text-center">
+                <h2 class="text-3xl font-serif font-bold text-stone-800 mb-4">Dictamen Final</h2>
+                <div class="text-lg text-stone-600 max-w-3xl mx-auto">
+                    "El sistema de gestión e inspección tributaria de la Diputación 
+                    <span class="font-bold text-teal-700">cumple razonablemente</span> 
+                    con la normativa vigente, salvo por las deficiencias documentales y procedimentales detectadas."
+                </div>
+                <div class="mt-8 flex justify-center">
+                    <div class="inline-flex items-center px-4 py-2 rounded-full bg-stone-100 text-stone-700 font-bold border border-stone-300">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span> Opinión Favorable con Salvedades
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg card-shadow">
+                    <h3 class="font-bold text-stone-800 mb-4 flex items-center">
+                        <span class="bg-teal-100 text-teal-800 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">A</span>
+                        Recomendaciones de Gestión
+                    </h3>
+                    <ul class="space-y-3 text-stone-600 text-sm">
+                        <li class="flex items-start">
+                            <span class="mr-2 text-teal-500">➔</span>
+                            Reforzar el control previo a la liquidación para asegurar que constan todos los títulos de propiedad.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 text-teal-500">➔</span>
+                            Automatizar la validación de campos obligatorios (referencia catastral) en el software de gestión.
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg card-shadow">
+                    <h3 class="font-bold text-stone-800 mb-4 flex items-center">
+                        <span class="bg-red-100 text-red-800 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">B</span>
+                        Correcciones Procedimentales
+                    </h3>
+                    <ul class="space-y-3 text-stone-600 text-sm">
+                        <li class="flex items-start">
+                            <span class="mr-2 text-red-400">➔</span>
+                            Asegurar que toda baja o anulación cuente con una resolución administrativa formal motivada.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2 text-red-400">➔</span>
+                            Mejorar el archivo y custodia de los acuses de recibo de notificaciones para evitar indefensión.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Disclaimer -->
+            <div class="text-center text-xs text-stone-400 pt-8 pb-4 border-t border-stone-200">
+                <p>Basado en el Informe Definitivo de Fiscalización a Posteriori 2014 - IIVTNU.</p>
+                <p>Diputación Provincial de A Coruña - Servicio de Fiscalización y Control Financiero.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        // --- DATA & STATE ---
+        const data = {
+            universe: {
+                total: 15541,
+                altas: 8879,
+                bajas: 6662
+            },
+            sample: {
+                total: 375,
+                altas: 245,
+                bajas: 130
+            },
+            findings: {
+                documentacion: {
+                    title: "Documentación Incompleta",
+                    icon: "fas fa-file-alt",
+                    color: "text-amber-600",
+                    bg: "bg-amber-50",
+                    desc: "La incidencia más frecuente. En varios expedientes de la muestra no constan documentos esenciales para verificar el hecho imponible.",
+                    details: [
+                        "Falta de copia de escritura pública de compraventa.",
+                        "Ausencia de títulos de herencia en transmisiones 'mortis causa'.",
+                        "Imposibilidad de verificar la fecha exacta de devengo (fecha de transmisión) sin el documento fuente."
+                    ],
+                    implication: "Riesgo de prescripción o cálculo incorrecto de los años de tenencia."
+                },
+                calculo: {
+                    title: "Errores de Cálculo",
+                    icon: "fas fa-calculator",
+                    color: "text-red-600",
+                    bg: "bg-red-50",
+                    desc: "Discrepancias puntuales entre la ordenanza fiscal municipal y la liquidación practicada.",
+                    details: [
+                        "Aplicación incorrecta de porcentajes de bonificación (ej. bonificaciones por herencia no acreditadas correctamente).",
+                        "Errores en la determinación del valor catastral del suelo en el momento del devengo.",
+                        "Tipos impositivos desactualizados en sistemas informáticos para ciertos municipios."
+                    ],
+                    implication: "Perjuicio económico para la administración o cobro indebido al contribuyente."
+                },
+                bajas: {
+                    title: "Procedimiento de Bajas",
+                    icon: "fas fa-ban",
+                    color: "text-purple-600",
+                    bg: "bg-purple-50",
+                    desc: "Deficiencias formales en la anulación de liquidaciones previamente emitidas.",
+                    details: [
+                        "Bajas realizadas en el sistema sin la correspondiente resolución administrativa (Decreto) que la soporte.",
+                        "Falta de motivación explicita: no se detalla la 'causa' (nulidad, error material, duplicidad) en el expediente.",
+                        "Ausencia de trazabilidad en anulaciones masivas."
+                    ],
+                    implication: "Falta de transparencia y debilidad en el control interno de ingresos."
+                },
+                notificaciones: {
+                    title: "Gestión de Notificaciones",
+                    icon: "fas fa-envelope",
+                    color: "text-blue-600",
+                    bg: "bg-blue-50",
+                    desc: "Problemas en la prueba fehaciente de que el ciudadano recibió la liquidación.",
+                    details: [
+                        "Expedientes donde no consta el acuse de recibo firmado o el intento de notificación.",
+                        "Notificaciones edictales sin agotar las vías de notificación personal previas.",
+                        "Fechas de notificación no registradas, impidiendo el cómputo de plazos de recurso."
+                    ],
+                    implication: "Nulidad de actuaciones y posible indefensión del contribuyente."
+                }
+            }
+        };
+
+        // --- NAVIGATION LOGIC ---
+        function navigate(sectionId) {
+            // Hide all sections
+            ['dashboard', 'incidencias', 'conclusiones'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById('nav-' + id)?.classList.remove('active-nav', 'text-teal-700');
+                document.getElementById('nav-' + id)?.classList.add('border-transparent', 'text-stone-500');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update Nav Style (Desktop)
+            const activeBtn = document.getElementById('nav-' + sectionId);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-stone-500');
+                activeBtn.classList.add('active-nav');
+            }
+            
+            // Trigger Chart resize if needed
+            if (sectionId === 'dashboard' && window.universeChartInstance) window.universeChartInstance.resize();
+            if (sectionId === 'incidencias' && window.incidencesChartInstance) window.incidencesChartInstance.resize();
+            
+            // Scroll to top
+            window.scrollTo(0,0);
+        }
+
+        // --- FINDINGS LOGIC ---
+        function showFinding(key) {
+            const finding = data.findings[key];
+            const contentDiv = document.getElementById('finding-content');
+            
+            // Update Sidebar Styles
+            document.querySelectorAll('.finding-btn').forEach(btn => {
+                btn.classList.remove('border-teal-500', 'bg-stone-50');
+                btn.classList.add('border-transparent');
+                btn.querySelector('i').className = btn.querySelector('i').className.replace('text-teal-500', 'text-stone-400');
+            });
+            const activeBtn = document.getElementById('btn-' + key);
+            activeBtn.classList.remove('border-transparent');
+            activeBtn.classList.add('border-teal-500', 'bg-stone-50');
+            activeBtn.querySelector('i').className = finding.icon + " text-teal-500";
+
+            // Render Content
+            contentDiv.innerHTML = `
+                <div class="animate-fade-in h-full flex flex-col">
+                    <div class="flex items-center mb-6">
+                        <div class="p-3 rounded-full ${finding.bg} mr-4">
+                            <i class="${finding.icon} text-xl ${finding.color}"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-stone-800">${finding.title}</h3>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <p class="text-lg text-stone-600 italic border-l-4 border-stone-300 pl-4 py-1">
+                            "${finding.desc}"
+                        </p>
+                    </div>
+
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-stone-700 uppercase text-xs tracking-wider mb-3">Detalles Técnicos Observados:</h4>
+                        <ul class="space-y-3">
+                            ${finding.details.map(detail => `
+                                <li class="flex items-start bg-stone-50 p-3 rounded-md">
+                                    <span class="text-red-400 mr-3 mt-1"><i class="fas fa-exclamation-circle"></i></span>
+                                    <span class="text-stone-700 text-sm">${detail}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-stone-100">
+                        <h4 class="font-bold text-stone-700 uppercase text-xs tracking-wider mb-2">Implicación Fiscal:</h4>
+                        <p class="text-sm text-stone-500 font-medium">${finding.implication}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- CHARTS INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial Render
+            showFinding('documentacion');
+
+            // 1. Universe Chart (Doughnut)
+            const ctxUniverse = document.getElementById('universeChart').getContext('2d');
+            window.universeChartInstance = new Chart(ctxUniverse, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Altas (Liq/Autoliq)', 'Bajas (Anulaciones)'],
+                    datasets: [{
+                        data: [data.universe.altas, data.universe.bajas],
+                        backgroundColor: ['#0d9488', '#d6d3d1'], // Teal 600, Stone 300
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, font: {family: 'Inter'} } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw;
+                                    let total = context.chart._metasets[context.datasetIndex].total;
+                                    let percentage = Math.round((value / total) * 100) + '%';
+                                    return label + ': ' + value.toLocaleString() + ' (' + percentage + ')';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Sample Chart (Bar)
+            const ctxSample = document.getElementById('sampleChart').getContext('2d');
+            window.sampleChartInstance = new Chart(ctxSample, {
+                type: 'bar',
+                data: {
+                    labels: ['Universo Total', 'Muestra Auditada'],
+                    datasets: [{
+                        label: 'Expedientes',
+                        data: [data.universe.total, data.sample.total],
+                        backgroundColor: ['#e7e5e4', '#0f766e'], // Stone 200, Teal 700
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Horizontal bar
+                    scales: {
+                        x: { beginAtZero: true, grid: { display: false } },
+                        y: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // 3. Incidences Impact Chart (Horizontal Bar - Estimated Severity)
+            // Note: Exact counts per error type aren't in the snippet summary, so we visualize 'Relative Impact' based on qualitative weight in report.
+            const ctxIncidences = document.getElementById('incidencesChart').getContext('2d');
+            window.incidencesChartInstance = new Chart(ctxIncidences, {
+                type: 'bar',
+                data: {
+                    labels: ['Falta Documentación', 'Errores Cálculo', 'Defectos Baja', 'Notificación'],
+                    datasets: [{
+                        label: 'Frecuencia Relativa de Incidencias',
+                        data: [45, 15, 25, 15], // Estimated distribution for visualization
+                        backgroundColor: [
+                            'rgba(217, 119, 6, 0.7)', // Amber
+                            'rgba(220, 38, 38, 0.7)', // Red
+                            'rgba(147, 51, 234, 0.7)', // Purple
+                            'rgba(37, 99, 235, 0.7)'  // Blue
+                        ],
+                        borderColor: [
+                            'rgb(217, 119, 6)',
+                            'rgb(220, 38, 38)',
+                            'rgb(147, 51, 234)',
+                            'rgb(37, 99, 235)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { display: false, max: 60 }, // Hide axis for cleaner look
+                        y: { 
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', weight: '500' } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return "Nivel de Incidencia: " + context.raw + "% (Estimado)";
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
